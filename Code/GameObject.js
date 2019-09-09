@@ -15,6 +15,18 @@ class GameObject{
 		return this.material;
 	}
 
+	set Material(mat){
+		typecheck(mat, Material, function (argument) {
+			throw "Set Material require a Material";
+		});
+
+		if(this.material != undefined){
+			this.material.removeGameObject(this);
+		}
+
+		this.material = new MaterialComponent(this, mat);
+	}
+
 	addComponent(newComponent){
 		typecheck(newComponent, Component, function (argument) {
 			throw "The argument is not a component";
@@ -22,14 +34,6 @@ class GameObject{
 
 		if(newComponent instanceof Transform){
 			throw "A GameObject can have only one transform";
-		}
-
-		if(this.material != undefined && newComponent instanceof Material){
-			throw "A GameObject can have only one material";
-		}
-
-		if(newComponent instanceof Material){
-			this.material = newComponent;
 		}
 
 		if(newComponent instanceof Camera){

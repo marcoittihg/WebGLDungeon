@@ -7,6 +7,7 @@ class Game{
 			throw "GL context not opened";
 		}
 
+
 		GlobalValues.getValue("GL").Value = this.gl;
 
   		resizeCanvasToDisplaySize(this.gl.canvas);
@@ -19,6 +20,7 @@ class Game{
 
     	this.gameobjects = [];
     	this.graphics = new Graphics(this.gl);
+    	this.physics = new Physics();
 
     	this.targetFPS = 60;
     	this.stop = false;
@@ -43,6 +45,10 @@ class Game{
 
 	get Graphics(){
 		return this.graphics;
+	}
+
+	get Physics(){
+		return this.physics;
 	}
 
 	get DeltaTime(){
@@ -86,12 +92,15 @@ class Game{
     			}
     		});
 
+    		this.physics.doStep()
+
     		//Call Update
     		this.scriptSet.forEach(function(script) {
     			script.Update();
     		});
 
 	  		GlobalValues.getValue("AspectRatio").Value = this.gl.canvas.width/this.gl.canvas.height;
+			
 			this.graphics.drawScene(this.gameobjects);
 
 	    	var upTime = (new Date).getTime();

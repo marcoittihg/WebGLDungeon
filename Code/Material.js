@@ -10,6 +10,12 @@ class Material extends Component{
 		this.texturePath = undefined;
 		this.texMix = 1.0;
 
+		this.normalMapPath = undefined;
+		this.normalMapSpace = "Game";
+
+		this.tilingX = 1.0;
+		this.tilingY = 1.0;
+
 		this.dirLights = [];
 		this.pointLights = [];
 		this.spotLights = [];
@@ -32,6 +38,37 @@ class Material extends Component{
 		this.dirty = true;
 	}
 
+	set TilingX(val){
+		typecheck(val, Number, function(argument) {
+			throw "The tiling must be a Number";
+		});
+
+		this.tilingX = val;
+	}
+
+	set TilingY(val){
+		typecheck(val, Number, function(argument) {
+			throw "The tiling must be a Number";
+		});
+
+		this.tilingY = val;
+	}
+	set NormalMapPath(val){
+		typecheck(val, String, function(argument) {
+			throw "The path must be a string";
+		});
+
+		this.normalMapPath = val;
+		this.dirty = true;
+	}
+
+	set NormalMapSpace(val){
+		if(val != "Game" && val != "Tangent"){
+			throw "The normal map space can only be Game or Tangent";
+		}
+
+		this.normalMapSpace = val;
+	}
 
 	set TexturePath(val){
 		typecheck(val, String, function(argument) {
@@ -214,7 +251,9 @@ class Material extends Component{
 			gl.vertexAttribPointer(uvAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
 		    var texture = gl.createTexture();
+    		gl.activeTexture(gl.TEXTURE0);
 		    gl.bindTexture(gl.TEXTURE_2D, texture);
+			
 
 		    var image = new Image();
 		    requestCORSIfNotSameOrigin(image, GlobalValues.getValue("BaseDir").Value + this.texturePath);
@@ -228,6 +267,46 @@ class Material extends Component{
 		      gl.generateMipmap(gl.TEXTURE_2D);
 		    };
 		    this.texture = texture;
+		}
+
+
+		if(this.normalMapPath != undefined){
+			if(this.normalMapSpace == "Tangent"){
+				var tanAttributeLocation = gl.getAttribLocation(this.program, "in_tan");
+
+				var tangentBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, tangentBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.Tangents), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(tanAttributeLocation);
+				gl.vertexAttribPointer(tanAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+
+
+				var bitanAttributeLocation = gl.getAttribLocation(this.program, "in_biTan");
+
+				var bitangentBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, bitangentBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.Bitangents), gl.STATIC_DRAW);
+				gl.enableVertexAttribArray(bitanAttributeLocation);
+				gl.vertexAttribPointer(bitanAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+
+			}
+
+		    var texture2 = gl.createTexture();
+    		gl.activeTexture(gl.TEXTURE1);
+		    gl.bindTexture(gl.TEXTURE_2D, texture2);
+
+		    var image2 = new Image();
+		    requestCORSIfNotSameOrigin(image2, GlobalValues.getValue("BaseDir").Value + this.normalMapPath);
+		    image2.src = GlobalValues.getValue("BaseDir").Value +this.normalMapPath;
+		    image2.onload= function() {
+		      gl.bindTexture(gl.TEXTURE_2D, texture2);
+		              gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image2);
+		              gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		              gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		      gl.generateMipmap(gl.TEXTURE_2D);
+		    };
+		    this.normalMap = texture2;
 		}
 
 		var indexBuffer = gl.createBuffer();
@@ -247,14 +326,9 @@ class Material extends Component{
 
 			var pos = lTransform.LocalPos;
 
-			var rz = MatrFactory.makeRotateZ(degToRad(lTransform.LocalRot.Z));
-			var rx = MatrFactory.makeRotateX(degToRad(lTransform.LocalRot.X));
-			var ry = MatrFactory.makeRotateY(degToRad(lTransform.LocalRot.Y));
+			var rot = lTransform.LocalRot;
 
-			var dir = Matr3x3.multiplyVector(
-				Matr4x4.multiplyArray([ry,rx,rz]).getSub3x3(),
-				new Vector3(0.0, 0.0, 1.0)
-				);
+			var dir = Vector3.DirFromQuaternion(rot);
 
 			var color = light.Color;
 
@@ -312,7 +386,6 @@ class Material extends Component{
 			gl.uniform1f(lConeOutLocation, light.ConeOut);
 			gl.uniform1f(lConeInLocation, light.ConeIn);
 		}
-
 		//Eye pos
 		var activeCameraT = Game.Instance.Graphics.ActiveCamera.GameObject.Transform;
 
@@ -321,9 +394,19 @@ class Material extends Component{
 
 		if(this.texturePath != undefined){
 			var textureLocation = gl.getUniformLocation(this.program, "u_texture"); 
-
     		gl.activeTexture(gl.TEXTURE0);
-    		gl.uniform1i(textureLocation, this.texture);
+		    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    		gl.uniform1i(textureLocation, 0);
+
+    		var tilingLocation = gl.getUniformLocation(this.program, "tiling");
+    		gl.uniform2f(tilingLocation, this.tilingX, this.tilingY);
+		}
+
+		if(this.normalMapPath != undefined){
+			var normalLocation = gl.getUniformLocation(this.program, "u_norm"); 
+    		gl.activeTexture(gl.TEXTURE1);
+		    gl.bindTexture(gl.TEXTURE_2D, this.normalMap);
+    		gl.uniform1i(normalLocation, 1);
 		}
 
 		if(this.useDiffuse){
@@ -365,7 +448,7 @@ class Material extends Component{
 		var locationN = gl.getUniformLocation(this.program, "nMatrix");
 		gl.uniformMatrix4fv(locationP, gl.false, pMatrix.transpose().GLValues);
 		gl.uniformMatrix4fv(locationW, gl.false, wMatrix.transpose().GLValues);
-		gl.uniformMatrix3fv(locationN, gl.false, wMatrix.transpose().getSub3x3().GLValues);
+		gl.uniformMatrix3fv(locationN, gl.false, wMatrix.getSub3x3().transpose().GLValues);
 
 
 		var locationD = gl.getUniformLocation(this.program, "DTexMix");
@@ -388,6 +471,6 @@ class Material extends Component{
   		gl.bindVertexArray(this.vao);
 
   		var mesh = this.GameObject.getComponent(Mesh);
-    	gl.drawElements(gl.TRIANGLES, mesh.Indexes.length, gl.UNSIGNED_SHORT, 0 );
+    	gl.drawElements(gl.TRIANGLES, mesh.Indexes.length, gl.UNSIGNED_SHORT, 0);
 	}
 }

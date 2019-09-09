@@ -60,6 +60,10 @@ class ShaderFactory{
 			return "uniform sampler2D u_texture;\n";
 		}
 
+		function normSamplerDef(){
+			return "uniform sampler2D u_norm;\n";
+		}
+
 		function diffuseDef() {
 			return "uniform vec4 diffuseColor;\n";
 		}
@@ -102,6 +106,10 @@ class ShaderFactory{
 				sh += texSamplerDef();
 			}
 
+			if(mat.normalMapPath != undefined){
+				sh += normSamplerDef();
+			}
+
 			if(mat.useDiffuse){
 				sh += diffuseDef();
 			}
@@ -141,8 +149,20 @@ class ShaderFactory{
 				s += "vec4 emit = emissionColor * (1.0-DTexMix) + texcol * DTexMix * max(max(emissionColor.r, emissionColor.g), emissionColor.b);\n";
 			}
 
-			s += "vec3 normalVec = normalize(norm);\n";
+			if(mat.normalMapPath != undefined){
+				if(mat.normalMapSpace == "Tangent"){
+					s += "vec3 m = 2.0 * texture(u_norm, uv).xyz - 1.0;\n";
+					s += "vec3 normalVec = normalize(tan) * m.x + normalize(biTan) * m.y + normalize(norm) * m.z;\n";
+					
+				} else{
+					s += "vec3 normalVec = normalize(nMatrix * texture(u_norm, uv).xyz);\n";
+				}
+			}else{
+				s += "vec3 normalVec = normalize(norm);\n";
+			}
+
 			s += "vec3 eyedirVec = normalize(eyePos - pos);\n";
+
 
 			s+= "vec4 calc_color = vec4(0.0, 0.0, 0.0, 0.0);\n";
 
@@ -170,25 +190,26 @@ class ShaderFactory{
 			//DIRECTIONAL
 			for (var i = 0; i < mat.dirLights.length; i++) {
 				if(mat.texturePath != undefined || mat.useDiffuse){
-					s+="lDiff = diffColor*clamp(dot(lDirDir"+i+",normalVec),0.0,1.0);\n";
+					s+="lDiff = diffColor*clamp(dot(-lDirDir"+i+",normalVec),0.0,1.0);\n";
 				}else{
 					s+="lDiff = vec4(0.0, 0.0, 0.0, 0.0);\n";
 				}
 
 				if(mat.specularType == "Phong"){
-					s+="lx = (lDirPos"+i+" - pos)/length(lDirPos"+i+"-pos);\n";
+					s+="lx = -lDirDir"+i+";\n";
 					s+="rlx = 2.0 * normalVec * dot(lx, normalVec) - lx;\n";
-					s+="lSpec = specularColor * clamp(pow(dot(eyedirVec, rlx),specularGamma),0.0,1.0);\n";
+					s+="lSpec = specularColor * pow(clamp(dot(eyedirVec, rlx),0.0,1.0), specularGamma);\n";
 				}else if(mat.specularType == "Blinn"){
-					s+="lx = (lDirPos"+i+" - pos)/length(lDirPos"+i+" - pos);\n";
+					s+="lx = -lDirDir"+i+";\n";
 					s+="hlx = (lx + eyedirVec) / length(lx + eyedirVec);\n";
-					s+="lSpec = specularColor * clamp(pow(dot(normalVec, hlx),specularGamma),0.0,1.0);\n";
+					s+="lSpec = specularColor * pow(clamp(dot(normalVec, hlx),0.0,1.0),specularGamma);\n";
 				}else{
 					//None
 					s+="lSpec = vec4(0.0, 0.0, 0.0, 0.0);\n";
 				}
 
 				s+= "calc_color += lDirColor"+i+" * (lDiff+lSpec);\n";
+				//s+= "calc_color = vec4(normalVec,1.0);\n";
 			}
 
 			//POINT
@@ -204,11 +225,11 @@ class ShaderFactory{
 				if(mat.specularType == "Phong"){
 					s+="lx = (lPointPos"+i+" - pos)/length(lPointPos"+i+" - pos);\n";
 					s+="rlx = 2.0 * normalVec * dot(lx, normalVec) - lx;\n";
-					s+="lSpec = specularColor * clamp(pow(dot(eyedirVec, rlx),specularGamma),0.0,1.0);\n";
+					s+="lSpec = specularColor * pow(clamp(dot(eyedirVec, rlx),0.0,1.0),specularGamma);\n";
 				}else if(mat.specularType == "Blinn"){
 					s+="lx = (lPointPos"+i+" - pos)/length(lPointPos"+i+" - pos);\n";
 					s+="hlx = (lx + eyedirVec) / length(lx + eyedirVec);\n";
-					s+="lSpec = specularColor * clamp(pow(dot(normalVec, hlx),specularGamma),0.0,1.0);\n";
+					s+="lSpec = specularColor * pow(clamp(dot(normalVec, hlx),0.0,1.0),specularGamma);\n";
 				}else{
 					//None
 					s+="lSpec = vec4(0.0, 0.0, 0.0, 0.0);\n";
@@ -235,10 +256,10 @@ class ShaderFactory{
 
 				if(mat.specularType == "Phong"){
 					s+="rlx = 2.0 * normalVec * dot(lx, normalVec) - lx;\n";
-					s+="lSpec = specularColor * clamp(pow(dot(eyedirVec, rlx),specularGamma),0.0,1.0);\n";
+					s+="lSpec = specularColor * pow(clamp(dot(eyedirVec, rlx),0.0,1.0),specularGamma);\n";
 				}else if(mat.specularType == "Blinn"){
 					s+="hlx = (lx + eyedirVec) / length(lx + eyedirVec);\n";
-					s+="lSpec = specularColor * clamp(pow(dot(normalVec, hlx),specularGamma),0.0,1.0);\n";
+					s+="lSpec = specularColor * pow(clamp(dot(normalVec, hlx),0.0,1.0),specularGamma);\n";
 				}else{
 					//None
 					s+="lSpec = vec4(0.0, 0.0, 0.0, 0.0);\n";
@@ -246,6 +267,7 @@ class ShaderFactory{
 
 				s+= "calc_color += lSpotColor"+i+" * lDecay * (lDiff+lSpec);\n";
 			}
+				//s+= "calc_color = vec4(texture(u_norm, uv).xyz,1.0);\n";
 
 			return s;
 		}
@@ -257,13 +279,21 @@ class ShaderFactory{
 		vs += "in vec3 in_pos;\n";
 		vs += "in vec3 in_norm;\n";
 
+		if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
+			vs += "in vec3 in_tan;\n";
+			vs += "in vec3 in_biTan;\n";
+		}
+
 		if(mat.texturePath != undefined){
 			vs += "in vec2 in_uv;\n";
+			vs += "uniform vec2 tiling;\n";
 		}
 
 		vs += "uniform mat4 pMatrix;\n";
 		vs += "uniform mat4 wMatrix;\n";
 		vs += "uniform mat3 nMatrix;\n";
+
+
 
 		if(mat.shadingType == "Gouraud"){
 			//Gouraud
@@ -277,6 +307,11 @@ class ShaderFactory{
 			if(mat.texturePath != undefined){
 				vs += "out vec2 fs_uv;\n";
 			}
+
+			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
+				vs += "out vec3 fs_tan;\n";
+				vs += "out vec3 fs_biTan;\n";
+			}
 		}
 
 		vs += "void main() {\n";
@@ -285,8 +320,14 @@ class ShaderFactory{
 		vs += "vec3 norm = nMatrix * in_norm;\n";
 
 		if(mat.texturePath != undefined){
-			vs += "vec2 uv = vec2(in_uv.x, in_uv.y);\n";
+			vs += "vec2 uv = vec2(in_uv.x*tiling.x, in_uv.y*tiling.y);\n";
 		}
+
+		if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
+			vs += "vec3 tan = nMatrix * in_tan;\n";
+			vs += "vec3 biTan = nMatrix * in_biTan;\n";
+		}
+
 		vs +="gl_Position = wMatrix * vec4(in_pos, 1.0);\n";
 
 		if(mat.shadingType == "Gouraud"){
@@ -299,6 +340,11 @@ class ShaderFactory{
 			if(mat.texturePath != undefined){
 				vs += "fs_uv = uv;\n";
 			}
+
+			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
+				vs += "fs_tan = tan;\n";
+				vs += "fs_biTan = biTan;\n";
+			}
 		}
 
 		vs += "}\n";
@@ -307,7 +353,7 @@ class ShaderFactory{
 		* FRAGMENT SHADER
 		******************/
 		var fs = "#version 300 es\n";
-		fs += "precision mediump float;\n";
+		fs += "precision highp float;\n";
 
 		if(mat.shadingType == "Gouraud"){
 			//Gouraud
@@ -320,8 +366,15 @@ class ShaderFactory{
 			if(mat.texturePath != undefined){
 				fs += "in vec2 fs_uv;\n";
 			}
+			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
+				fs += "in vec3 fs_tan;\n";
+				fs += "in vec3 fs_biTan;\n";
+			}
 
 			fs += Uniforms(mat);
+
+			fs += "uniform mat3 nMatrix;\n";
+			
 		}
 
 		fs += "out vec4 out_color;\n";
@@ -339,6 +392,11 @@ class ShaderFactory{
 
 			if(mat.texturePath != undefined){
 				fs += "vec2 uv = fs_uv;\n";
+			}
+
+			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
+				fs += "vec3 tan = fs_tan;\n";
+				fs += "vec3 biTan = fs_biTan;\n";
 			}
 
 			fs += calcColorDef(mat);

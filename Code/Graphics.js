@@ -43,7 +43,6 @@ class Graphics{
 			if(mat == undefined){
 				continue;
 			}
-
 			mat.draw();
 		}
 

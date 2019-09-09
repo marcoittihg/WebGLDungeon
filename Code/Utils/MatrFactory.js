@@ -121,50 +121,40 @@ class MatrFactory{
 			]);
 	}
 
-	static makeLookInView(cameraPos, cameraDir){
+	static makeLookInView(cameraPos, cameraRot){
 		var cb = function function_name() {
-			throw "At least one of the two given arguments is not of type Vector3";
+			throw "Wrong arguments vec3 and Quaternion";
 		};
 
 		typecheck(cameraPos, Vector3, cb);
-		typecheck(cameraDir, Vector3, cb);
+		typecheck(cameraRot, Quaternion, cb);
 
 		var cx = cameraPos.X;
 		var cy = cameraPos.Y;
 		var cz = cameraPos.Z;
 
-		var alpha = cameraDir.Y;
-		var beta = cameraDir.X;
-		var rho = cameraDir.Z;
-
-
 		var r180 = MatrFactory.makeRotateY(degToRad(180.0));
 
 		var mt = MatrFactory.makeTranslate(-cx, -cy, -cz);
-		var ry = MatrFactory.makeRotateY(degToRad(-alpha));
-		var rx = MatrFactory.makeRotateX(degToRad(-beta));
-		var rz = MatrFactory.makeRotateZ(degToRad(-rho));
+		var r = new Matr4x4(cameraRot.inverse().toMatrix4());
 
-		return Matr4x4.multiplyArray([r180, rz,rx,ry,mt]);
+		return Matr4x4.multiplyArray([r180, r, mt]);
 	}
 
-	static makeWorld(pos, dir, scal){
+	static makeWorld(pos, rot, scal){
 		function cb(){
-			throw "At leat one argument is not a Vector3";
+			throw "Wrong types for makeWorld";
 		}
 
 		typecheck(pos, Vector3, cb);
-		typecheck(dir, Vector3, cb);
+		typecheck(rot, Quaternion, cb);
 		typecheck(scal, Vector3, cb);
 
 		var s = MatrFactory.makeScale(scal.X, scal.Y, scal.Z);
+		var r = new Matr4x4(rot.toMatrix4());
+		var t = MatrFactory.makeTranslate(pos.X, pos.Y, pos.Z);
 
-		var rz = MatrFactory.makeRotateZ(degToRad(dir.Z));
-		var rx = MatrFactory.makeRotateX(degToRad(dir.X));
-		var ry = MatrFactory.makeRotateY(degToRad(dir.Y));
-		var t = MatrFactory.makeTranslate(-pos.X, pos.Y, pos.Z);
-
-		return Matr4x4.multiplyArray([t,ry,rx,rz,s]);
+		return Matr4x4.multiplyArray([t,r,s]);
 	}
 }
 

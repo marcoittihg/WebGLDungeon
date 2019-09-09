@@ -7,7 +7,7 @@ class Transform extends Component{
 		this.worldMatrix = Matr4x4.Identity();
 
 		this.localPos = Vector3.Zero();
-		this.localRot = Vector3.Zero();
+		this.localRot = Quaternion.fromEuler(0.0,0.0,0.0,'XYZ');
 		this.localScale = new Vector3(1.0,1.0,1.0);
 
 		this.parent = undefined;
@@ -64,14 +64,32 @@ class Transform extends Component{
 		});
 		this.localPos = val;
 		this.worldMatrix = MatrFactory.makeWorld(this.localPos, this.localRot, this.localScale);
+	
+		var rb = this.GameObject.getComponent(Rigidbody);
+		if(rb){
+			rb.reposition();
+		}
 	}
 
 	set LocalRot(val){
-		typecheck(val, Vector3, function (argument) {
-			throw "LocalRot must be a Vector3"
+		typecheck(val, [Vector3, Quaternion], function (argument) {
+			throw "LocalRot must be a Vector3 or a Quaternion"
 		});
-		this.localRot = val;
+		if(typecheckReturn(val, Vector3)){
+			this.localRot = Quaternion.fromEuler(
+				degToRad(val.Z),
+				degToRad(val.X),
+				degToRad(val.Y));
+		}else{
+			this.localRot = val;
+		}
+
 		this.worldMatrix = MatrFactory.makeWorld(this.localPos, this.localRot, this.localScale);
+
+		var rb = this.GameObject.getComponent(Rigidbody);
+		if(rb){
+			rb.reposition();
+		}
 	}
 	set LocalScale(val){
 		typecheck(val, Vector3, function (argument) {
@@ -79,6 +97,11 @@ class Transform extends Component{
 		});
 		this.localScale = val;
 		this.worldMatrix = MatrFactory.makeWorld(this.localPos, this.localRot, this.localScale);
+
+		var rb = this.GameObject.getComponent(Rigidbody);
+		if(rb){
+			rb.reposition();
+		}
 	}
 	
 	get LocalPos(){
@@ -90,5 +113,4 @@ class Transform extends Component{
 	get LocalScale(){
 		return this.localScale;
 	}
-
 }

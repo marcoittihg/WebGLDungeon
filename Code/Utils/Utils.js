@@ -5,7 +5,40 @@ typeMap[Number] = 'number';
 typeMap[Function] = 'function';
 typeMap[Boolean] = 'boolean';
 
+function typecheckReturn(obj, type){
+	if(Array.isArray(type)){
+		for (var i = type.length - 1; i >= 0; i--) {
+			if( typecheckReturn(obj, type[i]) == true){
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	if(obj instanceof Object){
+		if(!(obj instanceof type)){
+			return false;
+		}
+	}else{
+		type = typeMap[type];
+
+		if(!(typeof obj === type)){
+			return false;
+		}
+	}
+
+	return true;
+}
+
 function typecheck(obj, type, onTestFail) {
+	if(Array.isArray(type)){
+		if(typecheckReturn(obj, type) == false){
+			onTestFail();
+		}
+		return;
+	}
+
 	if(obj instanceof Object){
 		if(!(obj instanceof type)){
 			onTestFail();
@@ -28,6 +61,11 @@ function requestCORSIfNotSameOrigin(img, url) {
 function degToRad(angle){
 	return angle*Math.PI/180.0;
 }
+
+function RadToDeg(rad){
+	return rad/Math.PI*180.0;
+}
+
 
 function resizeCanvasToDisplaySize(canvas, multiplier) {
 	multiplier = multiplier || 1;

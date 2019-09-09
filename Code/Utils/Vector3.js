@@ -73,6 +73,37 @@ class Vector3{
 			v1.x*v2.y-v1.y*v2.x);
 	}
 
+	static magnitude(v){
+		return Math.sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z);
+	}
+
+	static normalize(v){
+		var len = Vector3.magnitude(v);
+
+		if(len == 0){
+			return new Vector3(0.0, 0.0, 1.0);
+		}
+
+		return new Vector3(v.X/len, v.Y/len, v.Z/len);
+	}
+
+	static EulerAnglesFromQuaternion(q){
+		var q0 = q.x();
+		var q1 = q.y();
+		var q2 = q.z();
+		var q3 = q.w();
+
+		var x = Math.atan2(2.0*(q0*q1+q2*q3), 1.0-2.0*(q1*q1+q2*q2));
+		var y = Math.asin(2.0*(q0*q2 - q3*q1));
+		var z = Math.atan2(2.0*(q0*q3+q1*q2), 1.0-2.0*(q2*q2+q3*q3));
+
+		return new Vector3(
+			RadToDeg(x),
+			RadToDeg(y),
+			RadToDeg(z)
+			);
+	}
+
 	static DirFromEulerAngles(angle){
 		typecheck(angle, Vector3, function (argument) {
 			throw "The euler angle must  be a Vector3";
@@ -86,5 +117,13 @@ class Vector3{
 				new Vector3(0.0, 0.0, 1.0)
 				);
 
+	}
+
+	static DirFromQuaternion(q){
+
+		return Matr3x3.multiplyVector(
+				new Matr3x3(q.toMatrix()),
+				new Vector3(0.0, 0.0, 1.0)
+			);
 	}
 }

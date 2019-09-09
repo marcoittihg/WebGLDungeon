@@ -35,4 +35,12 @@ class MeshLoader{
 			return model;
 		}
 	}
+
+	preloadData(path, data){
+		typecheck(path, String, function cb(argument) {
+			throw "The path must be a string";
+		});
+
+		this.map[path] = data;
+	}
 }

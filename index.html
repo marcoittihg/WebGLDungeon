@@ -11,8 +11,8 @@
         background-color: gray;
       }
       canvas {
-        width: 70vw;
-        height: 70vh;
+        width: 100vw;
+        height: 100vh;
         display: block;
         background-color: white;
       }
@@ -21,7 +21,9 @@
 
 <body>
   <canvas id="c"></canvas>
-  <script type="text/javascript" src="Code/Utils/quaternion.min.js"></script>
+  <script type="text/javascript" src="ammo.js"></script>
+  <script type="text/javascript" src="quaternion.min.js"></script>
+
   <script type="text/javascript" src="Code/Utils/Value.js"></script>
   <script type="text/javascript" src="Code/Utils/Utils.js"></script>
   <script type="text/javascript" src="Code/Utils/Vector3.js"></script>
@@ -34,8 +36,13 @@
   <script type="text/javascript" src="Code/ShaderFactory.js"></script>
   <script type="text/javascript" src="Code/Component.js"></script>
   <script type="text/javascript" src="Code/Transform.js"></script>
+  <script type="text/javascript" src="Code/Collider.js"></script>
+  <script type="text/javascript" src="Code/BoxCollider.js"></script>
+  <script type="text/javascript" src="Code/SphereCollider.js"></script>
+  <script type="text/javascript" src="Code/Rigidbody.js"></script>
   <script type="text/javascript" src="Code/Mesh.js"></script>
   <script type="text/javascript" src="Code/Material.js"></script>
+  <script type="text/javascript" src="Code/MaterialComponent.js"></script>
   <script type="text/javascript" src="Code/Camera.js"></script>
   <script type="text/javascript" src="Code/Light.js"></script>
   <script type="text/javascript" src="Code/PointLight.js"></script>
@@ -44,10 +51,10 @@
   <script type="text/javascript" src="Code/Script.js"></script>
   <script type="text/javascript" src="Code/GameObject.js"></script>
   <script type="text/javascript" src="Code/Graphics.js"></script>
+  <script type="text/javascript" src="Code/Physics.js"></script>
   <script type="text/javascript" src="Code/Game.js"></script>
   
-  <script type="text/javascript" src="Code/TestScript.js"></script>
-  <script type="text/javascript" src="Code/main.js"></script>
+  <script type="text/javascript" src="main.js"></script>
 </body>
 
 </html>

@@ -6,6 +6,7 @@ class Mesh extends Component{
 		super(obj);
 		obj.addComponent(this);
 		this.path = undefined;
+		this.index = 0;
 	}
 
 	checkIfPathDefined(){
@@ -22,25 +23,43 @@ class Mesh extends Component{
 		this.path = value;
 	}
 
+	set Index(val){
+		typecheck(val, Number, function (argument) {
+			throw "The mesh index must be a number";
+		});
+
+		this.index = val;
+	}
+
 	get Vertices(){
 		this.checkIfPathDefined();
-		return MeshLoader.Instance.getMeshData(this.path).meshes[0].vertices;
+		return MeshLoader.Instance.getMeshData(this.path).meshes[this.index].vertices;
 	}
 	
 	get Normals(){
 		this.checkIfPathDefined();
-		return MeshLoader.Instance.getMeshData(this.path).meshes[0].normals;
+		return MeshLoader.Instance.getMeshData(this.path).meshes[this.index].normals;
+	}
+
+	get Tangents(){
+		this.checkIfPathDefined();
+		return MeshLoader.Instance.getMeshData(this.path).meshes[this.index].tangents;
+	}
+
+	get Bitangents(){
+		this.checkIfPathDefined();
+		return MeshLoader.Instance.getMeshData(this.path).meshes[this.index].bitangents;
 	}
 
 	get Indexes(){
 		this.checkIfPathDefined();
 		return [].concat.apply(
 			[],
-			MeshLoader.Instance.getMeshData(this.path).meshes[0].faces
+			MeshLoader.Instance.getMeshData(this.path).meshes[this.index].faces
 		);
 	}
 	get TextureCoords(){
 		this.checkIfPathDefined();
-		return MeshLoader.Instance.getMeshData(this.path).meshes[0].texturecoords[0];
+		return MeshLoader.Instance.getMeshData(this.path).meshes[this.index].texturecoords[0];
 	}
 }
