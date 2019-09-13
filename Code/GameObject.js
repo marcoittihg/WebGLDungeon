@@ -36,6 +36,15 @@ class GameObject{
 			throw "A GameObject can have only one transform";
 		}
 
+		if(newComponent instanceof Material){
+			if(this.material != undefined){
+				throw "A GameObject can have only one Material";
+			}
+
+			this.material = newComponent;
+		}
+
+
 		if(newComponent instanceof Camera){
 			newComponent.Transform = this.Transform;
 		}

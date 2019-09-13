@@ -36,7 +36,11 @@ class Graphics{
 	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 
-		for (var i = 0; i < gos.length; i++) {
+	    MaterialDataFactory.Instance.forEachMD(function (md) {
+	    	md.draw();
+	    });
+	    
+		/*for (var i = 0; i < gos.length; i++) {
 			var go = gos[i];
 			var mat = go.getComponent(Material);
 
@@ -44,7 +48,7 @@ class Graphics{
 				continue;
 			}
 			mat.draw();
-		}
+		}*/
 
 	}
 }

@@ -1,11 +1,101 @@
 
 class ShaderFactory{
 	constructor(){
+		this.programs = {};
 	}
 
-	static createShader(mat){
-		typecheck(mat, Material,function () {
-			throw "createShader require a material";
+	static get Instance(){
+		if(ShaderFactory.INSTANCE == undefined){
+			ShaderFactory.INSTANCE = new ShaderFactory();
+		}
+
+		return ShaderFactory.INSTANCE;
+	}
+
+	getProgram(mat){
+		var map = this.programs;
+
+		try{
+			//texture path
+			map = map[mat.texturePath != undefined];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//normal map path
+			map = map[mat.normalMapPath != undefined];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+			//normal map space
+			map = map[mat.normalMapSpace];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//Diffuse
+			map = map[mat.useDiffuse];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//Ambient
+			map = map[mat.useAmbient];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//Specular
+			map = map[mat.specularType];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//Shading
+			map = map[mat.shadingType];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//Emission
+			map = map[mat.useEmission];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//NDirect
+			map = map[mat.dirLights.length];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//NPoint
+			map = map[mat.pointLights.length];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//NSpot
+			map = map[mat.spotLights.length];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			//NObj
+			map = map[mat.MatNumber];
+			if(map == undefined){
+				return this.createShader(mat);
+			}
+
+			return map;
+		}catch(err){
+			return this.createShader(mat);
+		}
+	}
+
+	createShader(mat){
+		typecheck(mat, MaterialData,function () {
+			throw "createShader require a material data type";
 		});
 
 		function inPositionDef(){
@@ -39,6 +129,7 @@ class ShaderFactory{
 			for (var i = 0; i < mat.pointLights.length; i++) {
 				//Point
 				s += "uniform vec3 lPointPos"+i+";\n";
+				s += "uniform vec3 lPointDir"+i+";\n";
 				s += "uniform float lPointDecay"+i+";\n";
 				s += "uniform float lPointTarget"+i+";\n";
 				s += "uniform vec4 lPointColor"+i+";\n";
@@ -82,9 +173,6 @@ class ShaderFactory{
 
 		function wMatrixDef(){
 			return "uniform mat4 wMatrix;\n";
-		}
-		function pMatrixDef() {
-			return "uniform mat4 pMatrix;\n";
 		}
 
 		function eyePosDef(){
@@ -155,7 +243,7 @@ class ShaderFactory{
 					s += "vec3 normalVec = normalize(tan) * m.x + normalize(biTan) * m.y + normalize(norm) * m.z;\n";
 					
 				} else{
-					s += "vec3 normalVec = normalize(nMatrix * texture(u_norm, uv).xyz);\n";
+					s += "vec3 normalVec = normalize(nMat * texture(u_norm, uv).xyz);\n";
 				}
 			}else{
 				s += "vec3 normalVec = normalize(norm);\n";
@@ -190,7 +278,7 @@ class ShaderFactory{
 			//DIRECTIONAL
 			for (var i = 0; i < mat.dirLights.length; i++) {
 				if(mat.texturePath != undefined || mat.useDiffuse){
-					s+="lDiff = diffColor*clamp(dot(-lDirDir"+i+",normalVec),0.0,1.0);\n";
+					s+="lDiff = 1.5 * diffColor*clamp(dot(-lDirDir"+i+",normalVec),0.0,1.0);\n";
 				}else{
 					s+="lDiff = vec4(0.0, 0.0, 0.0, 0.0);\n";
 				}
@@ -214,20 +302,20 @@ class ShaderFactory{
 
 			//POINT
 			for (var i = 0; i < mat.pointLights.length; i++) {
-				s += "lDecay = pow(lPointTarget"+i+"/length(lPointPos"+i+" - pos), lPointDecay"+i+");\n";
+				s += "vec3 lPoint = lPointPos"+i+";\n";
+				s += "lDecay = pow(lPointTarget"+i+"/length(lPoint - pos), lPointDecay"+i+");\n";
 
+				s+="lx = (lPoint - pos)/length(lPoint - pos);\n";
 				if(mat.texturePath != undefined || mat.useDiffuse){
-					s+="lDiff = diffColor;\n";
+					s+="lDiff = diffColor * 1.0 * clamp(dot(lx,normalVec),0.0,1.0); \n";//* 
 				}else{
 					s+="lDiff = vec4(0.0, 0.0, 0.0, 0.0);\n";
 				}
 
 				if(mat.specularType == "Phong"){
-					s+="lx = (lPointPos"+i+" - pos)/length(lPointPos"+i+" - pos);\n";
 					s+="rlx = 2.0 * normalVec * dot(lx, normalVec) - lx;\n";
 					s+="lSpec = specularColor * pow(clamp(dot(eyedirVec, rlx),0.0,1.0),specularGamma);\n";
 				}else if(mat.specularType == "Blinn"){
-					s+="lx = (lPointPos"+i+" - pos)/length(lPointPos"+i+" - pos);\n";
 					s+="hlx = (lx + eyedirVec) / length(lx + eyedirVec);\n";
 					s+="lSpec = specularColor * pow(clamp(dot(normalVec, hlx),0.0,1.0),specularGamma);\n";
 				}else{
@@ -249,7 +337,7 @@ class ShaderFactory{
 				s += "lDecay = pow(lSpotTarget"+i+"/length(lSpotPos"+i+" - pos), lSpotDecay"+i+") * clamp((dot(lx, lSpotDir"+i+")-Cout)/(Cin - Cout), 0.0, 1.0);\n";
 
 				if(mat.texturePath != undefined || mat.useDiffuse){
-					s+="lDiff = diffColor;\n";
+					s+="lDiff = diffColor * clamp(dot(lx,normalVec),0.0,1.0);;\n";
 				}else{
 					s+="lDiff = vec4(0.0, 0.0, 0.0, 0.0);\n";
 				}
@@ -267,7 +355,6 @@ class ShaderFactory{
 
 				s+= "calc_color += lSpotColor"+i+" * lDecay * (lDiff+lSpec);\n";
 			}
-				//s+= "calc_color = vec4(texture(u_norm, uv).xyz,1.0);\n";
 
 			return s;
 		}
@@ -278,6 +365,7 @@ class ShaderFactory{
 
 		vs += "in vec3 in_pos;\n";
 		vs += "in vec3 in_norm;\n";
+		vs += "in float in_index;\n";
 
 		if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
 			vs += "in vec3 in_tan;\n";
@@ -290,10 +378,9 @@ class ShaderFactory{
 		}
 
 		vs += "uniform mat4 pMatrix;\n";
-		vs += "uniform mat4 wMatrix;\n";
-		vs += "uniform mat3 nMatrix;\n";
-
-
+		vs += "uniform mat4 vMatrix;\n";
+		vs += "uniform mat4 wMatrix["+mat.MatNumber+"];\n";
+		vs += "uniform mat3 nMatrix["+mat.MatNumber+"];\n";
 
 		if(mat.shadingType == "Gouraud"){
 			//Gouraud
@@ -312,23 +399,29 @@ class ShaderFactory{
 				vs += "out vec3 fs_tan;\n";
 				vs += "out vec3 fs_biTan;\n";
 			}
+			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Game"){
+				vs += "out vec3 fs_wMat;\n";
+			}
 		}
 
 		vs += "void main() {\n";
 
-		vs += "vec3 pos = (wMatrix * vec4(in_pos, 1.0)).xyz;\n";
-		vs += "vec3 norm = nMatrix * in_norm;\n";
+		vs += "mat4 wMat = wMatrix[int(in_index)];\n";
+		vs += "mat3 nMat = nMatrix[int(in_index)];\n";
+
+		vs += "vec3 pos = (transpose(wMat) * vec4(in_pos, 1.0)).xyz;\n";
+		vs += "vec3 norm = nMat * in_norm;\n";
 
 		if(mat.texturePath != undefined){
 			vs += "vec2 uv = vec2(in_uv.x*tiling.x, in_uv.y*tiling.y);\n";
 		}
 
 		if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
-			vs += "vec3 tan = nMatrix * in_tan;\n";
-			vs += "vec3 biTan = nMatrix * in_biTan;\n";
+			vs += "vec3 tan = nMat * in_tan;\n";
+			vs += "vec3 biTan = nMat * in_biTan;\n";
 		}
 
-		vs +="gl_Position = wMatrix * vec4(in_pos, 1.0);\n";
+		vs +="gl_Position = (transpose(pMatrix) * transpose(vMatrix) * transpose(wMat)) * vec4(in_pos, 1.0);\n";
 
 		if(mat.shadingType == "Gouraud"){
 			vs += calcColorDef(mat);
@@ -344,6 +437,9 @@ class ShaderFactory{
 			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Tangent"){
 				vs += "fs_tan = tan;\n";
 				vs += "fs_biTan = biTan;\n";
+			}
+			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Game"){
+				vs += "fs_wMat = wMat;\n";
 			}
 		}
 
@@ -371,10 +467,7 @@ class ShaderFactory{
 				fs += "in vec3 fs_biTan;\n";
 			}
 
-			fs += Uniforms(mat);
-
-			fs += "uniform mat3 nMatrix;\n";
-			
+			fs += Uniforms(mat);			
 		}
 
 		fs += "out vec4 out_color;\n";
@@ -399,6 +492,10 @@ class ShaderFactory{
 				fs += "vec3 biTan = fs_biTan;\n";
 			}
 
+			if(mat.normalMapPath != undefined && mat.normalMapSpace == "Game"){
+				fs += "mat3 wMat = fs_wMat;\n";
+			}
+
 			fs += calcColorDef(mat);
 
 			fs += "out_color = vec4(calc_color.rgb,1.0);\n";
@@ -412,6 +509,93 @@ class ShaderFactory{
 		var vertexShader = createShader(gl, gl.VERTEX_SHADER, vs);
 	    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fs);
 	    var program = createProgram(gl, vertexShader, fragmentShader);
+
+		var map = this.programs;
+		var oldMap = this.programs;
+
+		//texture path
+		map = map[mat.texturePath != undefined];
+		if(map == undefined){
+			oldMap[mat.texturePath != undefined] = {};
+			map = oldMap[mat.texturePath != undefined];
+		}
+		//normal map path
+		oldMap = map;
+		map = map[mat.normalMapPath != undefined];
+		if(map == undefined){
+			oldMap[mat.normalMapPath != undefined] = {};
+			map = oldMap[mat.normalMapPath != undefined];
+		}
+		//normal map space
+		oldMap = map;
+		map = map[mat.normalMapSpace];
+		if(map == undefined){
+			oldMap[mat.normalMapSpace] = {};
+			map = oldMap[mat.normalMapSpace];
+		}
+		//Diffuse
+		oldMap = map;
+		map = map[mat.useDiffuse];
+		if(map == undefined){
+			oldMap[mat.useDiffuse] = {};
+			map = oldMap[mat.useDiffuse];
+		}
+		//Ambient
+		oldMap = map;
+		map = map[mat.useAmbient];
+		if(map == undefined){
+			oldMap[mat.useAmbient] = {};
+			map = oldMap[mat.useAmbient];
+		}
+		//Specular
+		oldMap = map;
+		map = map[mat.specularType];
+		if(map == undefined){
+			oldMap[mat.specularType] = {};
+			map = oldMap[mat.specularType];
+		}
+		//Shading
+		oldMap = map;
+		map = map[mat.shadingType];
+		if(map == undefined){
+			oldMap[mat.shadingType] = {};
+			map = oldMap[mat.shadingType];
+		}
+		//Emission
+		oldMap = map;
+		map = map[mat.useEmission];
+		if(map == undefined){
+			oldMap[mat.useEmission] = {};
+			map = oldMap[mat.useEmission];
+		}
+		//NDirect
+		oldMap = map;
+		map = map[mat.dirLights.length];
+		if(map == undefined){
+			oldMap[mat.dirLights.length] = {};
+			map = oldMap[mat.dirLights.length];
+		}
+		//NPoint
+		oldMap = map;
+		map = map[mat.pointLights.length];
+		if(map == undefined){
+			oldMap[mat.pointLights.length] = {};
+			map = oldMap[mat.pointLights.length];
+		}
+		//NSpot
+		oldMap = map;
+		map = map[mat.spotLights.length];
+		if(map == undefined){
+			oldMap[mat.spotLights.length] = {};
+			map = oldMap[mat.spotLights.length];
+		}
+
+		this.programs
+		[mat.texturePath != undefined][mat.normalMapPath != undefined]
+		[mat.normalMapSpace][mat.useDiffuse][mat.useAmbient][mat.specularType]
+		[mat.shadingType][mat.useEmission][mat.dirLights.length][mat.pointLights.length]
+		[mat.spotLights.length][mat.MatNumber] = program;
+
 
 		return program;
 	}

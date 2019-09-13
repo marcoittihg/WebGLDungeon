@@ -2,6 +2,7 @@
 class Light extends Component{
 	constructor(obj){
 		super(obj);
+		obj.addComponent(this);
 		this.color = new Vector4(1.0,1.0,1.0,1.0);
 	}
 

@@ -17,8 +17,31 @@ class Vector3{
 		return this.z;
 	}
 
-	static Zero(){
+	static get Zero(){
 		return new Vector3(0.0, 0.0, 0.0);
+	}
+
+	static get Forward(){
+		return new Vector3(0.0, 0.0, 1.0);
+	}
+	static get Backward(){
+		return new Vector3(0.0, 0.0, -1.0);
+	}
+	static get Left(){
+		return new Vector3(1.0, 0.0, 0.0);
+	}
+	static get Right(){
+		return new Vector3(-1.0, 0.0, 0.0);
+	}
+	static get Up(){
+		return new Vector3(0.0, 1.0, 0.0);
+	}
+	static get Down(){
+		return new Vector3(0.0, -1.0, 0.0);
+	}
+
+	static Lerp(a,b,t){
+		return new Vector3((1-t)*a.X+ t * b.X,(1-t)*a.Y+ t * b.Y, (1-t)*a.Z+ t * b.Z);
 	}
 
 	static add(v1, v2){
@@ -87,6 +110,17 @@ class Vector3{
 		return new Vector3(v.X/len, v.Y/len, v.Z/len);
 	}
 
+	static scale(v, s){
+		typecheck(v, Vector3, function (argument) {
+			throw "v is not a Vector3";
+		})
+		typecheck(s, Number, function (argument) {
+			throw "s is not a Number";
+		})
+
+		return new Vector3(v.X * s, v.Y * s, v.Z * s);
+	}
+
 	static EulerAnglesFromQuaternion(q){
 		var q0 = q.x();
 		var q1 = q.y();
@@ -120,7 +154,6 @@ class Vector3{
 	}
 
 	static DirFromQuaternion(q){
-
 		return Matr3x3.multiplyVector(
 				new Matr3x3(q.toMatrix()),
 				new Vector3(0.0, 0.0, 1.0)

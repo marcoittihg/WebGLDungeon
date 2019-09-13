@@ -6,7 +6,7 @@ class Transform extends Component{
 		super(obj);
 		this.worldMatrix = Matr4x4.Identity();
 
-		this.localPos = Vector3.Zero();
+		this.localPos = Vector3.Zero;
 		this.localRot = Quaternion.fromEuler(0.0,0.0,0.0,'XYZ');
 		this.localScale = new Vector3(1.0,1.0,1.0);
 
@@ -14,15 +14,60 @@ class Transform extends Component{
 		this.childTransforms = new Set();
 	}
 
+
+	get Forward(){
+		var v = this.GlobalRotation.rotateVector([0.0, 0.0, 1.0]);
+		return new Vector3(v[0], v[1], v[2]);
+	}
+	get Backward(){
+		var v = this.GlobalRotation.rotateVector([0.0, 0.0, -1.0]);
+		return new Vector3(v[0], v[1], v[2]);
+	}
+	get Left(){
+		var v = this.GlobalRotation.rotateVector([1.0, 0.0, 0.0]);
+		return new Vector3(v[0], v[1], v[2]);
+	}
+	get Right(){
+		var v = this.GlobalRotation.rotateVector([-1.0, 0.0, 0.0]);
+		return new Vector3(v[0], v[1], v[2]);
+	}
+	get Up(){
+		var v = this.GlobalRotation.rotateVector([0.0, 1.0, 0.0]);
+		return new Vector3(v[0], v[1], v[2]);
+	}
+	get Down(){
+		var v = this.GlobalRotation.rotateVector([0.0, -1.0, 0.0]);
+		return new Vector3(v[0], v[1], v[2]);
+	}
+
 	get WorldMatrix(){
-		return this.worldMatrix;
+		var v = this.worldMatrix;
 	}
 
 	get GlobalWorldMatrix(){
 		if(this.parent == undefined){
-			return this.WorldMatrix;
+			return this.worldMatrix;
 		}else{
-			return Matr4x4.multiply( this.parent.GlobalWorldMatrix, this.WorldMatrix);
+			var v = Matr4x4.multiply( this.parent.GlobalWorldMatrix, this.worldMatrix);
+
+			return v;
+		}
+	}
+
+	get GlobalPosition(){
+		var gwm = this.GlobalWorldMatrix;
+		var posX = gwm.getElem(0,3);
+		var posY = gwm.getElem(1,3);
+		var	posZ = gwm.getElem(2,3);
+
+		return new Vector3(posX, posY, posZ);
+	}
+
+	get GlobalRotation(){
+		if(this.parent == undefined){
+			return this.localRot;
+		}else{
+			return this.localRot.mul(this.parent.GlobalRotation);
 		}
 	}
 
@@ -64,13 +109,36 @@ class Transform extends Component{
 		});
 		this.localPos = val;
 		this.worldMatrix = MatrFactory.makeWorld(this.localPos, this.localRot, this.localScale);
-	
+		
 		var rb = this.GameObject.getComponent(Rigidbody);
-		if(rb){
+		if(rb && rb.addedToPhysics){
 			rb.reposition();
 		}
 	}
 
+	setLocalRot(val, order){
+		typecheck(val, [Vector3, Quaternion], function (argument) {
+			throw "LocalRot must be a Vector3 or a Quaternion"
+		});
+		if(order == undefined){
+			order = "ZXY";
+		}
+		if(typecheckReturn(val, Vector3)){
+			this.localRot = Quaternion.fromEuler(
+				degToRad(val.Z),
+				degToRad(val.X),
+				degToRad(val.Y),
+				order);
+		}else{
+			this.localRot = val;
+		}
+		this.worldMatrix = MatrFactory.makeWorld(this.localPos, this.localRot, this.localScale);
+
+		var rb = this.GameObject.getComponent(Rigidbody);
+		if(rb && rb.addedToPhysics){
+			rb.reposition();
+		}
+	}
 	set LocalRot(val){
 		typecheck(val, [Vector3, Quaternion], function (argument) {
 			throw "LocalRot must be a Vector3 or a Quaternion"
@@ -79,15 +147,16 @@ class Transform extends Component{
 			this.localRot = Quaternion.fromEuler(
 				degToRad(val.Z),
 				degToRad(val.X),
-				degToRad(val.Y));
+				degToRad(val.Y),
+				"ZXY");
 		}else{
 			this.localRot = val;
 		}
 
 		this.worldMatrix = MatrFactory.makeWorld(this.localPos, this.localRot, this.localScale);
-
+		
 		var rb = this.GameObject.getComponent(Rigidbody);
-		if(rb){
+		if(rb && rb.addedToPhysics){
 			rb.reposition();
 		}
 	}
@@ -99,7 +168,7 @@ class Transform extends Component{
 		this.worldMatrix = MatrFactory.makeWorld(this.localPos, this.localRot, this.localScale);
 
 		var rb = this.GameObject.getComponent(Rigidbody);
-		if(rb){
+		if(rb && rb.addedToPhysics){
 			rb.reposition();
 		}
 	}

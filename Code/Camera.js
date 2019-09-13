@@ -8,7 +8,7 @@ class Camera extends Component{
 		this.transform = undefined;
 		this.fov = 60.0;
 		this.n =  0.3;
-		this.f = 100.0;
+		this.f = 200.0;
 		this.a = 1.0;
 	}
 
@@ -30,7 +30,7 @@ class Camera extends Component{
 
 	get ViewMatrix(){
 		var transform = this.GameObject.Transform;
-		return MatrFactory.makeLookInView(transform.localPos, transform.localRot);
+		return MatrFactory.makeLookInView(transform.GlobalPosition, transform.GlobalRotation);
 	}
 
 	get ProjectionMatrix(){

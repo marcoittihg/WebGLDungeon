@@ -12,7 +12,7 @@ class Physics{
 		    phy.physicsWorld = new Ammo.btDiscreteDynamicsWorld(
 		    	dispatcher, overlappingPairCache, solver, collisionConfiguration
 		    	);
-		    phy.physicsWorld.setGravity(new Ammo.btVector3(0, -9.81, 0));
+		    phy.physicsWorld.setGravity(new Ammo.btVector3(0, -1, 0));
 		}
 
 		Ammo().then(start.bind(this));
@@ -21,12 +21,16 @@ class Physics{
 		this.tmpTransform = new Ammo.btTransform();
 	}
 
-	addRB(rb){
+	addRBSet(rb){
 		typecheck(rb, Rigidbody, function (argument) {
 			throw "Physics.addRb require a Rigidbody object";
 		});
 
 		this.rigidbodyset.add(rb);
+	}
+
+	addRB(rb){
+
 		this.physicsWorld.addRigidBody(rb.body);
 	}
 
@@ -43,6 +47,12 @@ class Physics{
 	doStep(dt){
 		dt = Game.Instance.DeltaTime;
 		var tmpTransform = this.tmpTransform;
+
+		this.rigidbodyset.forEach(function(rb) {
+			if(rb.addedToPhysics == false){
+				rb.updateRB();
+			}
+		});
 
 		this.physicsWorld.stepSimulation(dt,10);
 

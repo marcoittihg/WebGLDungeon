@@ -7,6 +7,7 @@ class Game{
 			throw "GL context not opened";
 		}
 
+		Input.initialize()
 
 		GlobalValues.getValue("GL").Value = this.gl;
 
@@ -92,7 +93,7 @@ class Game{
     			}
     		});
 
-    		this.physics.doStep()
+    		this.physics.doStep();
 
     		//Call Update
     		this.scriptSet.forEach(function(script) {
@@ -112,7 +113,6 @@ class Game{
 
 	    	lastUpdate = upTime;
     	}
-
 		return 0;
 	}
 }

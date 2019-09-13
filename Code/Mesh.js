@@ -21,6 +21,11 @@ class Mesh extends Component{
 		});
 
 		this.path = value;
+
+		this.indexes = [].concat.apply(
+			[],
+			MeshLoader.Instance.getMeshData(this.path).meshes[this.index].faces
+		);
 	}
 
 	set Index(val){
@@ -53,10 +58,7 @@ class Mesh extends Component{
 
 	get Indexes(){
 		this.checkIfPathDefined();
-		return [].concat.apply(
-			[],
-			MeshLoader.Instance.getMeshData(this.path).meshes[this.index].faces
-		);
+		return this.indexes;
 	}
 	get TextureCoords(){
 		this.checkIfPathDefined();
