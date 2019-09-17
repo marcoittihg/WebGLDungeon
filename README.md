@@ -3,7 +3,7 @@ WebGL based application for the Computer Graphics course - Politecnico Di Milano
 
 The application allow the user to navigate the map and interact with the objects in the scene.
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/U-bsdhucazI/0.jpg)](https://www.youtube.com/watch?v=U-bsdhucazI)
+[![https://img.youtube.com/vi/U-bsdhucazI/0.jpg](http://img.youtube.com/vi/U-bsdhucazI/0.jpg)](http://www.youtube.com/watch?v=U-bsdhucazI "WebGL Dungeon")
 
 ## Interesting features:
 
