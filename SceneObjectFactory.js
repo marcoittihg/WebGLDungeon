@@ -2055,9 +2055,10 @@ class SceneObjectFactory{
     	mesh.Path = "Models/freeDungeon.json";
 	    
 	    mat.TexturePath = "Textures/dungeonTexture.png";
-  		mat.shadingType = "Phong";
+  		//mat.shadingType = "Phong";
+  		mat.shadingType = "Gouraud";
 
-  		mat.SpecularType = "Phong";
+  		mat.SpecularType = "Blinn";
   		return [gameobject];
 	}
 
@@ -2071,6 +2072,7 @@ class SceneObjectFactory{
 	    
 	    mat.TexturePath = "Textures/dungeonTexture.png";
   		mat.shadingType = "Phong";
+  		mat.SpecularType = "Phong";
 
   		return [gameobject];
 	}
@@ -2159,6 +2161,7 @@ class SceneObjectFactory{
 	    mat.EmissionColor = new Vector4(0.125,0.10,0.0,0.2);
 
   		mat.shadingType = "Phong";
+  		mat.shadingType = "Gouraud";
 
   		return [gameobject];
 
