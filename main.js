@@ -9,7 +9,7 @@ function main() {
   var camera = SceneObjectFactory.PerspectiveCamera;
 
   var player = SceneObjectFactory.Player[0];
-  player.Transform.LocalPos = new Vector3(0.0, 2.8, 0.0);
+  player.Transform.LocalPos = new Vector3(0.0, 10, 0.0);
 
   GlobalValues.getValue("Player").Value = player;
 
